@@ -1,6 +1,8 @@
 import express from "express";
 import { clienteModel } from "../models/clientes.js"; 
 import { documentoModel } from "../models/documento.js";
+import { crearCliente, login } from '../services/authService.js';
+
 import mongoose from "mongoose";
 
 
@@ -30,7 +32,7 @@ export async function crearCliente(req, res){
             return res.status(404).send('Uno o más documentos publicados ingresados no existen en la base de datos');
         }
 
-        const cliente = new documentoModel(req.body);
+        const cliente = new clienteModel(req.body);
         const clienteGuardar = await cliente.save();
         res.status(201).send(clienteGuardar);
     } catch (e) {
@@ -38,6 +40,27 @@ export async function crearCliente(req, res){
     }
 }
 
+// Validación nueva, crear Cliente, iniciar sesión, JWT Implementado - Probar
+
+export const registrarCliente = async (req, res) => {
+    try {
+        const cliente = await crearCliente(req.body);
+        res.status(201).json(cliente);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const iniciarSesion = async (req, res) => {
+    const { correo, contrasenia } = req.body;
+    try {
+        const { token, cliente } = await login(correo, contrasenia);
+        res.json({ token, cliente });
+    } catch (error) {
+        res.status(401).json({ message: error.message });
+    }
+};
+// Fin nueva validación
 const validarDocumentosDescargados = async (documentosDescIds) => {
     const documentosValidos = await documentoModel.find({_id: {$in: documentosDescIds}});
     return documentosValidos.length === documentosDescIds;
